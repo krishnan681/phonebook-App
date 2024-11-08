@@ -61,8 +61,7 @@
 // }
 
 // =================== Updated Drawer Section =============================================================
-
-import React from "react";
+import React, { useState } from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
 import CustomDrawerContent from "./Components/CustomDrawerContent";
@@ -72,27 +71,62 @@ import Home from "./Components/Home";
 import MediaPartner from "./Components/MediaPartner";
 import SendSMS from "./Components/SendSms";
 import Test from "./Components/Test";
+import { AuthProvider } from "./Components/AuthContext";
 
 const Drawer = createDrawerNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Drawer.Navigator
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
-          headerShown: true,
-          drawerStyle: {
-            width: 250,
-          },
-        }}
-      >
-        <Drawer.Screen name="Home" component={Home} />
-        <Drawer.Screen name="Login" component={Login} />
-        <Drawer.Screen name="Signup" component={Signup} />
-        <Drawer.Screen name="MediaPartner" component={MediaPartner} />
-        <Drawer.Screen name="SendSms" component={SendSMS} />
-      </Drawer.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
+        <Drawer.Navigator
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+          screenOptions={{
+            drawerStyle: {
+              width: 250,
+            },
+          }}
+        >
+          <Drawer.Screen
+            name="Home"
+            component={Home}
+            options={{ headerShown: true }}
+          />
+          <Drawer.Screen
+            name="Login"
+            component={Login}
+            options={{ headerShown: false }}
+          />
+          <Drawer.Screen
+            name="Signup"
+            component={Signup}
+            options={{ headerShown: false }}
+          />
+          <Drawer.Screen
+            name="MediaPartner"
+            component={MediaPartner}
+            options={{ headerShown: true }}
+          />
+          <Drawer.Screen
+            name="NearbyPromotion"
+            component={SendSMS}
+            options={{ headerShown: true }}
+          />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
+// ================================== updated App ===================================
+// App.js
+// import React from "react";
+// import { AuthProvider } from "./Components/AuthContext";
+// import MainStack from "./Components/MainStack"; // Assuming your main navigation stack
+
+// export default function App() {
+//   return (
+//     <AuthProvider>
+//       <MainStack />
+//     </AuthProvider>
+//   );
+// }

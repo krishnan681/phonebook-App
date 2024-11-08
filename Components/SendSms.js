@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import RNPickerSelect from "react-native-picker-select";
 import { Ionicons } from "@expo/vector-icons";
+import { RadioButton } from "react-native-paper";
 
 const SendSms = () => {
   const [pincodeInput, setPincodeInput] = useState("");
@@ -107,7 +108,28 @@ const SendSms = () => {
 
   return (
     <View style={styles.container}>
-      <Text>Select Prefix</Text>
+      <View>
+        <Text>Select Prefix</Text>
+        <View style={styles.prefixContainer}>
+          {prefixes.map((prefix) => (
+            <TouchableOpacity
+              key={prefix.name}
+              onPress={() => setSelectedPrefix(prefix.name)}
+              style={styles.prefixItem}
+            >
+              <RadioButton
+                value={prefix.name}
+                status={
+                  selectedPrefix === prefix.name ? "checked" : "unchecked"
+                }
+                onPress={() => setSelectedPrefix(prefix.name)}
+              />
+              <Text style={styles.prefixLabel}>{prefix.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+      {/* <Text>Select Prefix</Text>
       <View style={styles.prefixContainer}>
         {prefixes.map((prefix, index) => (
           <TouchableOpacity
@@ -123,7 +145,7 @@ const SendSms = () => {
             <Text style={styles.prefixLabel}>{prefix.name}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </View> */}
 
       <View style={styles.pincodeInputContainer}>
         <TextInput
@@ -181,7 +203,7 @@ const SendSms = () => {
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "add-circle"}
                     size={30}
-                    color={isSelected ? "#3b8132" : "#007bff"}
+                    color={isSelected ? "#3b8132" : "#6a0dad"}
                   />
                 </TouchableOpacity>
               </View>
@@ -204,7 +226,7 @@ const SendSms = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { flex: 1, padding: 20, },
   prefixContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -226,7 +248,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   searchButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#6a0dad",
     padding: 15,
     marginLeft: 10,
     borderRadius: 8,
@@ -249,7 +271,7 @@ const styles = StyleSheet.create({
   },
   cardContent: { flex: 1 },
   button: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#6a0dad",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",

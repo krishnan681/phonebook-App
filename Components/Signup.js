@@ -270,16 +270,17 @@ const styles = StyleSheet.create({
   },
   headerText: {
     textAlign: "center",
-    fontSize: 50,
+    fontSize: 30,
     fontWeight: "500",
     color: "#6a0dad",
+    marginTop: 60,
   },
   formContainer: {
     flex: 1,
     backgroundColor: "#ffffff",
     borderTopLeftRadius: 400,
     padding: 20,
-    marginTop: "10%",
+    marginTop: "5%",
   },
   label: {
     fontSize: 18,

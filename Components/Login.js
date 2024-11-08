@@ -10,47 +10,17 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import axios from "axios";
+import { AuthContext } from "./AuthContext";
 
 const Login = ({ navigation }) => {
+  const { login } = useContext(AuthContext);
   const [mobileno, setMobileno] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!mobileno) {
-      Alert.alert("Error", "Please enter your mobile number.");
-      return;
-    }
-
-    if (password !== "Signpost") {
-      Alert.alert("Invalid Password", "Please enter the correct password.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        "https://signpostphonebook.in/client_login.php",
-        { mobileno }
-      );
-
-      setLoading(false);
-
-      if (response.data.valid) {
-        // Navigate to Home and pass the businessname
-        navigation.navigate("Home", {
-          businessname: response.data.businessname || "Guest",
-        });
-        setMobileno("");
-        setPassword("");
-      } else {
-        Alert.alert("User not found", "Please sign up.");
-        navigation.navigate("Signup");
-      }
-    } catch (error) {
-      setLoading(false);
-      Alert.alert("Error", "Unable to login. Please try again later.");
-    }
+  const handleLogin = () => {
+    login(mobileno, password, navigation);
+    setMobileno("");
+    setPassword("");
   };
   return (
     <View style={styles.container}>
@@ -84,17 +54,8 @@ const Login = ({ navigation }) => {
           Note: Your Password is Signpost
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={handleLogin}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.loginText}>Login</Text>
-        )}
-        {/* <Text style={styles.loginText}>LOGIN</Text> */}
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+        <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don’t have an account? </Text>

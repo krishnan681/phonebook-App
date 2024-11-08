@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -15,8 +15,10 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { Ionicons } from "@expo/vector-icons";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
+import { AuthContext } from "./AuthContext";
 
 const HomePage = ({ route, navigation }) => {
+  const { user } = useContext(AuthContext);
   const businessname = route?.params?.businessname || "Guest";
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,11 +135,16 @@ const HomePage = ({ route, navigation }) => {
 
   const renderItem = ({ item }) => {
     const openModal = () => {
-      if (selectedItem === item.id) {
-        setSelectedItem(""); // Collapse the card if it's already open
+      if (user === "") {
+        Alert.alert("Login Required");
+        navigation.navigate("Login");
       } else {
-        setSelectedItem(item.id); // Set the selected card to fetch details
-        setModalVisible(true);
+        if (selectedItem === item.id) {
+          setSelectedItem(""); // Collapse the card if it's already open
+        } else {
+          setSelectedItem(item.id); // Set the selected card to fetch details
+          setModalVisible(true);
+        }
       }
     };
 
@@ -148,16 +155,21 @@ const HomePage = ({ route, navigation }) => {
     const dialedNumber = item.mobileno;
 
     const OpenDialpad = () => {
-      let phoneUrl = `tel:${dialedNumber}`;
-      Linking.canOpenURL(phoneUrl)
-        .then((supported) => {
-          if (supported) {
-            Linking.openURL(phoneUrl);
-          } else {
-            Alert.alert("Error", "Dial pad is not supported on this device.");
-          }
-        })
-        .catch((err) => console.error("An error occurred", err));
+      if (user === "") {
+        Alert.alert("Login Required");
+        navigation.navigate("Login");
+      } else {
+        let phoneUrl = `tel:${dialedNumber}`;
+        Linking.canOpenURL(phoneUrl)
+          .then((supported) => {
+            if (supported) {
+              Linking.openURL(phoneUrl);
+            } else {
+              Alert.alert("Error", "Dial pad is not supported on this device.");
+            }
+          })
+          .catch((err) => console.error("An error occurred", err));
+      }
     };
     return (
       <View style={styles.card}>
@@ -233,7 +245,6 @@ const HomePage = ({ route, navigation }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      <Text>{businessname}</Text>
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
           <Icon name="search" size={24} color="#6a0dad" style={styles.icon} />

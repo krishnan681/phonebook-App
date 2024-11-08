@@ -1,22 +1,37 @@
 // ============================================== Corection Code ============================================================
 // CustomDrawerContent.js
-import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import React, { useContext } from "react";
+import { View, Text, StyleSheet, Image, Alert } from "react-native";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import Icon from "react-native-vector-icons/Ionicons";
-export default function CustomDrawerContent(props) {
-  const handleLogout = () => {
-    props.navigation.navigate("Login");
-  };
+import { AuthContext } from "./AuthContext";
+export default function CustomDrawerContent(props, { navigation }) {
+  const { user, logout } = useContext(AuthContext);
 
+  const handleMediaPartner = () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else {
+      props.navigation.navigate("MediaPartner");
+    }
+  };
+  const handleSendSms = () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else {
+      props.navigation.navigate("NearbyPromotion");
+    }
+  };
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
       <View style={styles.header}>
-        <Image
+        {/* <Image
           source={{ uri: "https://via.placeholder.com/40" }}
           style={styles.logo}
-        />
-        <Text style={styles.brand}>Welcome Guest!</Text>
+        /> */}
+        <Text style={styles.brand}>Welcome {user.username}</Text>
       </View>
 
       <View style={styles.menu}>
@@ -29,21 +44,21 @@ export default function CustomDrawerContent(props) {
         <DrawerItem
           label="MediaPartner"
           icon={() => <Icon name="book-outline" size={20} color="#f5365c" />}
-          onPress={() => props.navigation.navigate("MediaPartner")}
+          onPress={handleMediaPartner}
           labelStyle={styles.label}
         />
         <DrawerItem
-          label="SendSMS"
+          label="Nearby Promotion"
           icon={() => (
             <Icon name="document-text-outline" size={20} color="#5e72e4" />
           )}
-          onPress={() => props.navigation.navigate("SendSms")}
+          onPress={handleSendSms}
           labelStyle={styles.label}
         />
         <DrawerItem
           label="Profile"
           icon={() => <Icon name="person-outline" size={20} color="#f5365c" />}
-          onPress={() => props.navigation.navigate("Profile")}
+          onPress={() => alert("Update Will Come Soon!")}
           labelStyle={styles.label}
         />
         <DrawerItem
@@ -51,7 +66,7 @@ export default function CustomDrawerContent(props) {
           icon={() => (
             <Icon name="settings-outline" size={20} color="#11cdef" />
           )}
-          onPress={() => alert("Account")}
+          onPress={() => alert("Update Will Come Soon!")}
           labelStyle={styles.label}
         />
       </View>
@@ -61,13 +76,13 @@ export default function CustomDrawerContent(props) {
         <DrawerItem
           label="Getting started"
           icon={() => <Icon name="rocket-outline" size={20} color="#fff" />}
-          onPress={() => alert("Getting Started")}
+          onPress={() => alert("Update Will Come soon")}
           labelStyle={styles.footerLabel}
         />
         <DrawerItem
           label="Logout"
           icon={() => <Icon name="log-out-outline" size={20} color="#f5365c" />}
-          onPress={handleLogout}
+          onPress={() => logout(props.navigation)}
           labelStyle={styles.footerLabel}
         />
       </View>
