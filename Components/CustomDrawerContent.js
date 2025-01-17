@@ -1,12 +1,17 @@
-// ============================================== Corection Code ============================================================
-// CustomDrawerContent.js
 import React, { useContext } from "react";
-import { View, Text, StyleSheet, Image, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import Icon from "react-native-vector-icons/Ionicons";
 import { AuthContext } from "./AuthContext";
-export default function CustomDrawerContent(props, { navigation }) {
+
+export default function CustomDrawerContent(props) {
   const { user, logout } = useContext(AuthContext);
+
+  // List of allowed mobile numbers for the Admin page
+  const allowedAdminNumbers = ["6383965890","99445 61464", "98436 57564"]; // Add your admin mobile numbers here
+
+  // Normalize and check if the logged-in user is an admin
+  const isAdmin = allowedAdminNumbers.includes(user.mobileno?.trim());
 
   const handleMediaPartner = () => {
     if (user === "") {
@@ -16,6 +21,18 @@ export default function CustomDrawerContent(props, { navigation }) {
       props.navigation.navigate("MediaPartner");
     }
   };
+
+  const handleAdminPage = () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else if (!isAdmin) {
+      Alert.alert("Access Denied", "You do not have permission to access the Admin page.");
+    } else {
+      props.navigation.navigate("AdminPage");
+    }
+  };
+
   const handleSendSms = () => {
     if (user === "") {
       Alert.alert("Login Required");
@@ -24,14 +41,11 @@ export default function CustomDrawerContent(props, { navigation }) {
       props.navigation.navigate("NearbyPromotion");
     }
   };
+
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
       <View style={styles.header}>
-        {/* <Image
-          source={{ uri: "https://via.placeholder.com/40" }}
-          style={styles.logo}
-        /> */}
-        <Text style={styles.brand}>Welcome {user.username}</Text>
+        <Text style={styles.brand}>Welcome {user.username || "Guest"}</Text>
       </View>
 
       <View style={styles.menu}>
@@ -42,7 +56,7 @@ export default function CustomDrawerContent(props, { navigation }) {
           labelStyle={styles.label}
         />
         <DrawerItem
-          label="MediaPartner"
+          label="Media Partner"
           icon={() => <Icon name="book-outline" size={20} color="#f5365c" />}
           onPress={handleMediaPartner}
           labelStyle={styles.label}
@@ -61,6 +75,15 @@ export default function CustomDrawerContent(props, { navigation }) {
           onPress={() => alert("Update Will Come Soon!")}
           labelStyle={styles.label}
         />
+        {/* Conditionally render the Admin menu item */}
+        {isAdmin && (
+          <DrawerItem
+            label="Admin"
+            icon={() => <Icon name="person" size={20} color="#f5365c" />}
+            onPress={handleAdminPage}
+            labelStyle={styles.label}
+          />
+        )}
         <DrawerItem
           label="Account"
           icon={() => (
@@ -74,9 +97,9 @@ export default function CustomDrawerContent(props, { navigation }) {
       <View style={styles.footer}>
         <Text style={styles.footerTitle}>Documentation</Text>
         <DrawerItem
-          label="Getting started"
+          label="Getting Started"
           icon={() => <Icon name="rocket-outline" size={20} color="#fff" />}
-          onPress={() => alert("Update Will Come soon")}
+          onPress={() => alert("Update Will Come Soon")}
           labelStyle={styles.footerLabel}
         />
         <DrawerItem
@@ -96,11 +119,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     backgroundColor: "#6a0dad",
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
   },
   brand: {
     marginLeft: 10,

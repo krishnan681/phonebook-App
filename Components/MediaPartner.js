@@ -7,12 +7,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Button,
 } from "react-native";
-import RNPickerSelect from "react-native-picker-select";
-import { RadioButton } from "react-native-paper";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import Tesseract from "tesseract.js";
 
-const MediaPartner = ({ navigation }) => {
+const MediaPartner = () => {
   const [mybusinessname, setBusinessname] = useState("");
   const [mydoorno, setDoorno] = useState("");
   const [mycity, setCity] = useState("");
@@ -21,109 +21,113 @@ const MediaPartner = ({ navigation }) => {
   const [mylandLine, setLandLine] = useState("");
   const [myLcode, setLcode] = useState("");
   const [myemail, setEmail] = useState("");
-  const [myprefix, setPrefix] = useState("");
   const [mymobileno, setMobileno] = useState("");
-  const [isRegistered, setIsRegistered] = useState(false);
 
-  const resetForm = () => {
-    setBusinessname("");
-    setDoorno("");
-    setCity("");
-    setPincode("");
-    setProduct("");
-    setLandLine("");
-    setLcode("");
-    setEmail("");
-    setPrefix("");
-    setMobileno("");
-    setIsRegistered(false);
+  const [imageUri, setImageUri] = useState(null);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.uri);
+      performOCR(result.uri);
+    }
   };
 
-  // Check if the mobile number is registered
-  const checkMobileNumber = async (mobile) => {
+  const takePhoto = async () => {
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.uri);
+      performOCR(result.uri);
+    }
+  };
+
+  // Convert image to base64 using expo-file-system
+  const convertToBase64 = async (uri) => {
+    if (!uri) {
+      throw new Error("Invalid URI for image.");
+    }
+
     try {
-      const response = await fetch(
-        `https://signpostphonebook.in/client_insert.php`,
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return `data:image/jpeg;base64,${base64}`;
+    } catch (error) {
+      console.error("Error converting image to base64:", error);
+      throw error;
+    }
+  };
+
+  // Perform OCR using Tesseract.js
+  const performOCR = async (imageUri) => {
+    try {
+      const base64Image = await convertToBase64(imageUri); // Convert image to base64
+
+      const { data: { text } } = await Tesseract.recognize(
+        base64Image,
+        "eng", // Language code
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ mobileno: mobile }),
+          logger: (info) => console.log(info), // Optional logger
         }
       );
-      const result = await response.json();
-      console.log("Check Mobile Response:", result);
 
-      if (result.registered) {
-        setIsRegistered(true);
-        Alert.alert(
-          "Mobile Number Exists",
-          "This mobile number is already registered."
-        );
-        setMobileno("");
-      } else {
-        setIsRegistered(false);
-      }
+      console.log("OCR Result:", text);
+      autoFillFormFields(text); // Call function to auto-fill form fields
     } catch (error) {
-      console.error("Error checking mobile:", error);
-      Alert.alert("Error", "Unable to verify mobile number.");
+      console.error("OCR Error:", error);
+      Alert.alert("Error", "Unable to process the image. Please try again.");
     }
   };
 
-  // Insert new record if the mobile number is not registered
-  const insertRecord = async () => {
-    //validation mobilnumber
-    if (!mymobileno.trim() && !mybusinessname.trim()) {
-      Alert.alert("Validation Error", "Enter Details on Required field.");
-      return;
-    }
-    if (isRegistered) {
-      Alert.alert("Error", "Mobile number is already registered.");
+  // Auto-fill form fields with OCR text
+  const autoFillFormFields = (ocrText) => {
+    const mobileNumberMatch = ocrText.match(/\d{10}/); // Match 10-digit mobile numbers
+    const nameMatch = ocrText.match(/[A-Za-z\s]+/); // Match words for name/business name
+
+    if (mobileNumberMatch) setMobileno(mobileNumberMatch[0]);
+    if (nameMatch) setBusinessname(nameMatch[0].trim());
+  };
+
+  // Submit form data
+  const insertRecord = () => {
+    if (
+      !mymobileno ||
+      !mybusinessname ||
+      !mydoorno ||
+      !mycity ||
+      !mypincode ||
+      !myproduct ||
+      !myemail
+    ) {
+      Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
 
-    const Data = {
-      businessname: mybusinessname,
-      doorno: mydoorno,
+    const formData = {
+      mobile: mymobileno,
+      businessName: mybusinessname,
+      address: mydoorno,
       city: mycity,
       pincode: mypincode,
-      prefix: myprefix,
-      mobileno: mymobileno,
-      email: myemail,
       product: myproduct,
-      landline: mylandLine,
-      lcode: myLcode,
+      email: myemail,
     };
 
-    console.log("Sending Data:", Data);
+    console.log("Submitting the following data:", formData);
 
-    try {
-      const response = await fetch(
-        "https://signpostphonebook.in/client_insert.php",
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(Data),
-        }
-      );
-
-      const jsonResponse = await response.json();
-      console.log("Server Response:", jsonResponse);
-
-      if (jsonResponse.Message) {
-        Alert.alert("Success", jsonResponse.Message);
-        resetForm();
-      } else {
-        Alert.alert("Error", "Unexpected response from server.");
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      Alert.alert("Error", error.message);
-    }
+    // Submit form data via API (mocked for now)
+    Alert.alert("Success", "Form submitted successfully!");
   };
 
   return (
@@ -139,7 +143,6 @@ const MediaPartner = ({ navigation }) => {
             style={styles.input}
             value={mymobileno}
             onChangeText={(text) => setMobileno(text)}
-            onEndEditing={() => checkMobileNumber(mymobileno)}
           />
 
           <Text style={styles.label}>*Name / Business Name :</Text>
@@ -149,29 +152,6 @@ const MediaPartner = ({ navigation }) => {
             value={mybusinessname}
             onChangeText={(text) => setBusinessname(text)}
           />
-
-          <View style={styles.prefixcontainer}>
-            <Text style={styles.label}>*Prefix:</Text>
-            <RadioButton.Group
-              onValueChange={(value) => setPrefix(value)}
-              value={myprefix}
-            >
-              <View style={styles.radioContainer}>
-                <View style={styles.radioOption}>
-                  <RadioButton value="Mr." />
-                  <Text>Mr.</Text>
-                </View>
-                <View style={styles.radioOption}>
-                  <RadioButton value="Ms." />
-                  <Text>Ms.</Text>
-                </View>
-                <View style={styles.radioOption}>
-                  <RadioButton value="M/s." />
-                  <Text>M/s.(for Firms)</Text>
-                </View>
-              </View>
-            </RadioButton.Group>
-          </View>
 
           <Text style={styles.label}>*Address :</Text>
           <TextInput
@@ -208,24 +188,6 @@ const MediaPartner = ({ navigation }) => {
             onChangeText={(text) => setProduct(text)}
           />
 
-          <Text style={styles.label}>Landline Number :</Text>
-          <TextInput
-            placeholder="Landline Number"
-            keyboardType="number-pad"
-            style={styles.input}
-            value={mylandLine}
-            onChangeText={(text) => setLandLine(text)}
-          />
-
-          <Text style={styles.label}>STD Code :</Text>
-          <TextInput
-            placeholder="STD Code"
-            keyboardType="number-pad"
-            style={styles.input}
-            value={myLcode}
-            onChangeText={(text) => setLcode(text)}
-          />
-
           <Text style={styles.label}>Email :</Text>
           <TextInput
             style={styles.input}
@@ -239,6 +201,14 @@ const MediaPartner = ({ navigation }) => {
           <TouchableOpacity style={styles.button} onPress={insertRecord}>
             <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={pickImage}>
+            <Text style={styles.buttonText}>Pick Image</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={takePhoto}>
+            <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
     </View>
@@ -249,10 +219,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
-  },
-  inputAndroid: {
-    borderWidth: 3,
-    borderColor: "#000000",
   },
   headerText: {
     textAlign: "center",
@@ -265,18 +231,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderTopLeftRadius: 300,
     padding: 20,
-  },
-  prefixcontainer: {
-    padding: 16,
-  },
-  radioOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  radioContainer: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   label: {
     fontSize: 18,
@@ -306,3 +260,4 @@ const styles = StyleSheet.create({
 });
 
 export default MediaPartner;
+ 

@@ -70,7 +70,7 @@ import Signup from "./Components/Signup";
 import Home from "./Components/Home";
 import MediaPartner from "./Components/MediaPartner";
 import SendSMS from "./Components/SendSms";
-import Test from "./Components/Test";
+import AdminPage from "./Components/Admin/AdminPage";
 import { AuthProvider } from "./Components/AuthContext";
 
 const Drawer = createDrawerNavigator();
@@ -112,11 +112,17 @@ export default function App() {
             component={SendSMS}
             options={{ headerShown: true }}
           />
+          <Drawer.Screen
+            name="AdminPage" // Add AdminPage screen to the drawer
+            component={AdminPage}
+            options={{ headerShown: true }}
+          />
         </Drawer.Navigator>
       </NavigationContainer>
     </AuthProvider>
   );
 }
+
 // ================================== updated App ===================================
 // App.js
 // import React from "react";

@@ -1,0 +1,169 @@
+import React, { useContext } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { AuthContext } from '../AuthContext';
+
+const AdminPage = () => {
+  // Using AuthContext to get user details
+  const { user } = useContext(AuthContext); // This will give access to the current user
+  
+  return (
+    <View style={styles.container}>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View>
+          {/* Check if user exists */}
+          <Text style={styles.greeting}>Hi {user?.username || 'Guest'}</Text>
+          <Text style={styles.subGreeting}>Have you taken out the trash today?</Text>
+        </View>
+        <Image
+          source={{ uri: user?.profileImage || 'https://via.placeholder.com/50' }} // Replace with actual user profile image URL
+          style={styles.profileImage}
+        />
+      </View>
+
+      {/* Balance and Points Section */}
+      <View style={styles.balanceSection}>
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Total Recoreds</Text>
+          <Text style={styles.balanceValue}>$678.00</Text>
+        </View>
+        <View style={styles.pointsCard}>
+          <Text style={styles.pointsLabel}>Total Users</Text>
+          <Text style={styles.pointsValue}>2,095</Text>
+        </View>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity style={styles.actionButton}>
+          <Text style={styles.actionText}>Pick Up Trash</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton}>
+          <Text style={styles.actionText}>My Billing</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton}>
+          <Text style={styles.actionText}>My Voucher</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton}>
+          <Text style={styles.actionText}>Help Center</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Promotional Section */}
+      <View style={styles.promoSection}>
+        <Text style={styles.promoText}>Get Cashback 40%</Text>
+        <Text style={styles.promoSubText}>
+          For the first purchase, you can get 40% cashback using gopay.
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 50,
+    height: 150,
+    padding: 20,
+    backgroundColor: '#EAF0F9',
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  subGreeting: {
+    fontSize: 15,
+    color: '#888',
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 50,
+    backgroundColor: '#ccc',
+  },
+  balanceSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  balanceCard: {
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: '#6C63FF',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  pointsCard: {
+    flex: 1,
+    marginLeft: 10,
+    backgroundColor: '#6C63FF',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  balanceLabel: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  balanceValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  pointsLabel: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  pointsValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  actionButton: {
+    width: '48%',
+    backgroundColor: '#EAF0F9',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  actionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  promoSection: {
+    backgroundColor: '#EAF0F9',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  promoText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  promoSubText: {
+    fontSize: 14,
+    color: '#555',
+    textAlign: 'center',
+  },
+});
+
+export default AdminPage;
+
+for just now can you implement the total records and the totalusers

@@ -28,6 +28,8 @@ export const AuthProvider = ({ children }) => {
       if (response.data.valid) {
         setUser({
           username: response.data.businessname,
+          mobileno: username, 
+
         });
         navigation.navigate("Home");
       } else {
@@ -50,3 +52,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+
