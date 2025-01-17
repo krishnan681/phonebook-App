@@ -8,7 +8,7 @@ export default function CustomDrawerContent(props) {
   const { user, logout } = useContext(AuthContext);
 
   // List of allowed mobile numbers for the Admin page
-  const allowedAdminNumbers = ["6383965890","99445 61464", "98436 57564"]; // Add your admin mobile numbers here
+  const allowedAdminNumbers = ["6383965890", "9843657564","8344508070"]; // Add your admin mobile numbers here
 
   // Normalize and check if the logged-in user is an admin
   const isAdmin = allowedAdminNumbers.includes(user.mobileno?.trim());
