@@ -9,7 +9,7 @@ const TestHome = ({ navigation }) => {
     <View style={styles.container}>
       {user ? (
         <>
-          <Text style={styles.welcomeText}>Welcome, {user.username}!</Text>
+          <Text style={styles.welcomeText}>Welcome, {userData.businessname || userData.person}!</Text>
           <Button title="Logout" onPress={() => logout(navigation)} />
         </>
       ) : (

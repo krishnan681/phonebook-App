@@ -4,14 +4,14 @@ import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import Icon from "react-native-vector-icons/Ionicons";
 import { AuthContext } from "./AuthContext";
 
-export default function CustomDrawerContent(props) {
-  const { user, logout } = useContext(AuthContext);
+export default function CustomDrawerContent(props,{navigation}) {
+  const { user, userData, logout } = useContext(AuthContext);
 
   // List of allowed mobile numbers for the Admin page
   const allowedAdminNumbers = ["6383965890", "9843657564","8344508070"]; // Add your admin mobile numbers here
 
   // Normalize and check if the logged-in user is an admin
-  const isAdmin = allowedAdminNumbers.includes(user.mobileno?.trim());
+  // const isAdmin = allowedAdminNumbers.includes(userData.mobileno?.trim());
 
   const handleMediaPartner = () => {
     if (user === "") {
@@ -22,16 +22,16 @@ export default function CustomDrawerContent(props) {
     }
   };
 
-  const handleAdminPage = () => {
-    if (user === "") {
-      Alert.alert("Login Required");
-      props.navigation.navigate("Login");
-    } else if (!isAdmin) {
-      Alert.alert("Access Denied", "You do not have permission to access the Admin page.");
-    } else {
-      props.navigation.navigate("AdminPage");
-    }
-  };
+  // const handleAdminPage = () => {
+  //   if (user === "") {
+  //     Alert.alert("Login Required");
+  //     props.navigation.navigate("Login");
+  //   } else if (!isAdmin) {
+  //     Alert.alert("Access Denied", "You do not have permission to access the Admin page.");
+  //   } else {
+  //     props.navigation.navigate("AdminPage");
+  //   }
+  // };
 
   const handleSendSms = () => {
     if (user === "") {
@@ -41,11 +41,19 @@ export default function CustomDrawerContent(props) {
       props.navigation.navigate("NearbyPromotion");
     }
   };
+  const handleProductSms = () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else {
+      props.navigation.navigate("CategorywisePromotion");
+    }
+  };
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
       <View style={styles.header}>
-        <Text style={styles.brand}>Welcome {user.username || "Guest"}</Text>
+        <Text style={styles.brand}>Welcome {userData.businessname|| userData.person}</Text>
       </View>
 
       <View style={styles.menu}>
@@ -70,20 +78,28 @@ export default function CustomDrawerContent(props) {
           labelStyle={styles.label}
         />
         <DrawerItem
+          label="CategorywisePromotion"
+          icon={() => (
+            <Icon name="document-text-outline" size={20} color="#5e72e4" />
+          )}
+          onPress={handleProductSms}
+          labelStyle={styles.label}
+        />
+        <DrawerItem
           label="Profile"
           icon={() => <Icon name="person-outline" size={20} color="#f5365c" />}
           onPress={() => alert("Update Will Come Soon!")}
           labelStyle={styles.label}
         />
         {/* Conditionally render the Admin menu item */}
-        {isAdmin && (
+        {/* {isAdmin && (
           <DrawerItem
             label="Admin"
             icon={() => <Icon name="person" size={20} color="#f5365c" />}
             onPress={handleAdminPage}
             labelStyle={styles.label}
           />
-        )}
+        )} */}
         <DrawerItem
           label="Account"
           icon={() => (

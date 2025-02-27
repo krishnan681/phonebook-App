@@ -13,12 +13,12 @@ import axios from "axios";
 import { AuthContext } from "./AuthContext";
 
 const Login = ({ navigation }) => {
-  const { login } = useContext(AuthContext);
+  const { Login } = useContext(AuthContext);
   const [mobileno, setMobileno] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = () => {
-    login(mobileno, password, navigation);
+    Login(mobileno, password, navigation);
     setMobileno("");
     setPassword("");
   };

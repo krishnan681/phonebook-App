@@ -11,7 +11,7 @@ import Icon from '@expo/vector-icons/Ionicons'; // Ensure Ionicons is installed
 import { AuthContext } from '../AuthContext';
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const {user } = useContext(AuthContext);
   const [totals, setTotals] = useState({ totalRecords: 0, totalUniqueIds: 0 });
   const [latestEntries, setLatestEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,7 @@ const Dashboard = () => {
     try {
       if (!refreshing) setLoading(true); // Show loading indicator only for the first load
       const response = await fetch(
-        'https://signpostphonebook.in/client_fetch.php'
+        'https://signpostphonebook.in/client_fetch_for_new_database.php'
       );
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();

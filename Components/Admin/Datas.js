@@ -27,7 +27,7 @@ const Datas = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('https://signpostphonebook.in/client_fetch.php');
+      const response = await fetch('https://signpostphonebook.in/client_fetch_for_new_database.php');
       if (!response.ok) throw new Error('Network response was not ok');
       const result = await response.json();
 
@@ -81,7 +81,7 @@ const Datas = () => {
     if (selectedItem) {
       // Update the existing entry
       try {
-        const response = await fetch('https://signpostphonebook.in/update_row.php', {
+        const response = await fetch('https://signpostphonebook.in/update_row_for_new_database.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(selectedItem),
@@ -146,7 +146,7 @@ const Datas = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch('https://signpostphonebook.in/delete_row.php', {
+      const response = await fetch('https://signpostphonebook.in/delete_row_for_new_database.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),

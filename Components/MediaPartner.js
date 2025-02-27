@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useContext } from "react";
 import {
   View,
   Text,
@@ -7,127 +7,334 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Button,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
-import Tesseract from "tesseract.js";
+import RNPickerSelect from "react-native-picker-select";
+import { RadioButton } from "react-native-paper";
+import axios from "axios";
+import { AuthContext } from "./AuthContext";
 
-const MediaPartner = () => {
+const MediaPartner = ({ navigation }) => {
+  const { user, userData } = useContext(AuthContext); // Use userData for auth
   const [mybusinessname, setBusinessname] = useState("");
-  const [mydoorno, setDoorno] = useState("");
+  const [myperson, setPerson] = useState("");
+  const [myaddress, setAddress] = useState("");
   const [mycity, setCity] = useState("");
   const [mypincode, setPincode] = useState("");
   const [myproduct, setProduct] = useState("");
   const [mylandLine, setLandLine] = useState("");
   const [myLcode, setLcode] = useState("");
   const [myemail, setEmail] = useState("");
-  const [mymobileno, setMobileno] = useState("");
+  const [myprefix, setPrefix] = useState("");
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [regName, setRegName] = useState("");
+  const [regPrefix, setRegPrefix] = useState("");
+  const [regBusinessName, setRegBusinessName] = useState("");
+  const [regBusinessPrefix, setRegBusinessPrefix] = useState("");
+  const [mymobileno, setMymobileno] = useState("");
+  const [cityName, setCityName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const cmpanyPrefix = "M/s.";
+  const mydescription = "Update Soon";
+  const mypriority = "0";
+  const mydiscount = "10";
+  const [showPopup, setShowPopup] = useState(false);
 
-  const [imageUri, setImageUri] = useState(null);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
+  const resetForm = () => {
+    setBusinessname("");
+    setAddress("");
+    setPerson("");
+    setCity("");
+    setPincode("");
+    setProduct("");
+    setLandLine("");
+    setLcode("");
+    setEmail("");
+    setPrefix("");
+    setMymobileno("");
+    setIsRegistered(false);
+  };
+
+  // Help text visibility states
+  const [helpText, setHelpText] = useState({
+    mobile: false,
+    person: false,
+    prefix: false,
+    business: false,
+    address: false,
+    city: false,
+    pincode: false,
+    product: false,
+    landline: false,
+    std: false,
+    email: false,
+  });
+
+  // Reset all help texts
+  const resetAllHelpTexts = () => {
+    setHelpText({
+      mobile: false,
+      person: false,
+      prefix: false,
+      business: false,
+      address: false,
+      city: false,
+      pincode: false,
+      product: false,
+      landline: false,
+      std: false,
+      email: false,
     });
-
-    if (!result.canceled) {
-      setImageUri(result.uri);
-      performOCR(result.uri);
-    }
   };
 
-  const takePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.uri);
-      performOCR(result.uri);
-    }
+  // Set specific help text
+  const setHelpTextVisible = (field) => {
+    resetAllHelpTexts();
+    setHelpText((prev) => ({ ...prev, [field]: true }));
   };
 
-  // Convert image to base64 using expo-file-system
-  const convertToBase64 = async (uri) => {
-    if (!uri) {
-      throw new Error("Invalid URI for image.");
-    }
-
+  // Check if the mobile number is registered
+  const checkMobileNumber = async (mobile) => {
     try {
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      return `data:image/jpeg;base64,${base64}`;
-    } catch (error) {
-      console.error("Error converting image to base64:", error);
-      throw error;
-    }
-  };
-
-  // Perform OCR using Tesseract.js
-  const performOCR = async (imageUri) => {
-    try {
-      const base64Image = await convertToBase64(imageUri); // Convert image to base64
-
-      const { data: { text } } = await Tesseract.recognize(
-        base64Image,
-        "eng", // Language code
+      const response = await fetch(
+        `https://signpostphonebook.in/client_insert_data_for_new_database.php`,
         {
-          logger: (info) => console.log(info), // Optional logger
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ mobileno: mobile }),
         }
       );
+      const result = await response.json();
 
-      console.log("OCR Result:", text);
-      autoFillFormFields(text); // Call function to auto-fill form fields
+      if (result.registered) {
+        console.log(result.data);
+
+        // Store values
+        setRegBusinessName(result.businessname);
+        setRegBusinessPrefix(result.prefix);
+        setRegName(result.person);
+        setRegPrefix(result.personprefix);
+        setIsRegistered(true);
+
+        // Construct Alert message
+        let alertMessage = "";
+        if (result.businessname) {
+          alertMessage = `Mobile Number Already Registered\n\nIn the Name of: ${result.prefix} ${result.businessname}`;
+        } else {
+          alertMessage = `Mobile Number Already Registered\n\nIn the Name of: ${result.personprefix} ${result.person}`;
+        }
+
+        // Show Alert Box
+        Alert.alert("Mobile Number Exists", alertMessage, [
+          { text: "OK", onPress: () => setMymobileno("") },
+        ]);
+      } else {
+        setIsRegistered(false);
+      }
     } catch (error) {
-      console.error("OCR Error:", error);
-      Alert.alert("Error", "Unable to process the image. Please try again.");
+      Alert.alert("Error", "Unable to verify mobile number.");
+      console.error(error);
     }
   };
 
-  // Auto-fill form fields with OCR text
-  const autoFillFormFields = (ocrText) => {
-    const mobileNumberMatch = ocrText.match(/\d{10}/); // Match 10-digit mobile numbers
-    const nameMatch = ocrText.match(/[A-Za-z\s]+/); // Match words for name/business name
+ 
 
-    if (mobileNumberMatch) setMobileno(mobileNumberMatch[0]);
-    if (nameMatch) setBusinessname(nameMatch[0].trim());
-  };
-
-  // Submit form data
-  const insertRecord = () => {
-    if (
-      !mymobileno ||
-      !mybusinessname ||
-      !mydoorno ||
-      !mycity ||
-      !mypincode ||
-      !myproduct ||
-      !myemail
-    ) {
-      Alert.alert("Error", "Please fill in all required fields.");
+  const insertbusinessName = async () => {
+    if (!userData) {
+      console.log("Error: No authenticated user found.");
       return;
     }
+  
+    const dataName = {
+      name: userData.businessname || userData.person,
+      date: new Date().toISOString().split("T")[0],
+      dataentry_name: mybusinessname || myperson,
+       
+    };
+  
+    try {
+      const response = await axios.post(
+        "https://signpostphonebook.in/signpostphonebookdataentry_get_names.php",
+        dataName,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (response.data.success) {
+        console.log("Success", response.data.message);
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log("Unable to reach server", error);
+    }
+  };
+  
 
-    const formData = {
-      mobile: mymobileno,
-      businessName: mybusinessname,
-      address: mydoorno,
+
+
+  const insertRecord = async (e) => {
+    e.preventDefault();
+  
+    if (!mymobileno) {
+      alert("Please enter all required fields.");
+      return;
+    }
+  
+    if (isRegistered) {
+      alert("Mobile number is already registered.");
+      return;
+    }
+  
+    const Data = {
+      businessname: mybusinessname,
+      prefix: cmpanyPrefix,
+      person: myperson,
+      personprefix: myprefix,
+      address: myaddress,
+      priority: mypriority,
       city: mycity,
       pincode: mypincode,
-      product: myproduct,
+      mobileno: mymobileno,
       email: myemail,
+      product: myproduct,
+      landline: mylandLine,
+      lcode: myLcode,
+      discount: mydiscount,
+      description: mydescription,
+       
     };
+  
+    try {
+      const response = await fetch(
+        "https://signpostphonebook.in/client_insert_data_for_new_database.php",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(Data),
+        }
+      );
+  
+      const jsonResponse = await response.json();
+  
+      if (jsonResponse.Message) {
+        setShowPopup(true);
+        await insertCount(userData?.id); // Pass user ID properly
+        await insertbusinessName();
+      } else {
+        alert("Unexpected response from server.");
+      }
+    } catch (error) {
+      alert("Error saving data.");
+      console.log(error);
+    }
+  };
+  
+  const insertCount = async (userid) => {
+    if (!userid) {
+      console.log("Error: No authenticated user ID found.");
+      return;
+    }
+  
+    const dataCount = new URLSearchParams({
+      userid: userData.id,
+      name: userData.businessname || userData.person,
+      date: new Date().toISOString().split("T")[0],
+      count: "1", // Ensure count is a string
+    });
+  
+    try {
+      const response = await fetch(
+        "https://signpostphonebook.in/get_count_from_signpostphonebookdata.php",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: dataCount.toString(),
+        }
+      );
+  
+      const responseData = await response.json();
+  
+      if (responseData.success) {
+        console.log(
+          `Success: ${responseData.message}, New Count: ${responseData.newCount}`
+        );
+      } else {
+        console.log(`Error: ${responseData.message}`);
+      }
+    } catch (error) {
+      console.log(`Error: Unable to reach the server. ${error.message}`);
+    }
+  };
 
-    console.log("Submitting the following data:", formData);
+  
+  //for business name input box 
 
-    // Submit form data via API (mocked for now)
-    Alert.alert("Success", "Form submitted successfully!");
+  const handleBusinessName = (text) => {
+    // Remove any character that is not a letter or space
+    const filteredText = text.replace(/[^a-zA-Z\s]/g, '');
+    setBusinessname(filteredText);
+  };
+  
+
+  //for person name input box
+
+  const handlePersonName = (text) => {
+    // Remove any character that is not a letter or space
+    const filteredText = text.replace(/[^a-zA-Z\s]/g, "");
+    setPerson(filteredText);
+  };
+
+
+  //for city name input box
+
+
+  const handleCityName = (text) => {
+    // Remove any character that is not a letter or space
+    const filteredText = text.replace(/[^a-zA-Z\s]/g, "");
+    setCity(filteredText);
+  };
+
+
+
+ // for mobile number
+
+
+
+
+  const handleEndEditing = () => {
+    // Regular expression to match a 10-digit number starting with 6, 7, 8, or 9
+    const mobileNumberPattern = /^[6-9]\d{9}$/;
+
+    if (!mobileNumberPattern.test(mymobileno)) {
+      Alert.alert("Invalid Mobile Number", "Mobile number must be 10 digits.");
+      setMymobileno(""); // Clear the input field
+    } else {
+      // Proceed with further actions, such as checking if the number is registered
+      checkMobileNumber(mymobileno);
+    }
+  };
+
+  const handleChange = (text) => {
+    // Remove any non-numeric characters
+    const cleaned = text.replace(/[^0-9]/g, "");
+    // Update state with cleaned text
+    setMymobileno(cleaned);
+    // Optionally, provide feedback if length exceeds 10
+    if (cleaned.length > 10) {
+      Alert.alert("Invalid Length", "Mobile number cannot exceed 10 digits.");
+    }
   };
 
   return (
@@ -135,6 +342,7 @@ const MediaPartner = () => {
       <Text style={styles.headerText}>Media Partner</Text>
       <View style={styles.formContainer}>
         <ScrollView>
+          {/* Mobile Number */}
           <Text style={styles.label}>*Mobile Number :</Text>
           <TextInput
             placeholder="Mobile Number"
@@ -142,34 +350,81 @@ const MediaPartner = () => {
             maxLength={10}
             style={styles.input}
             value={mymobileno}
-            onChangeText={(text) => setMobileno(text)}
+            onChangeText={handleChange}
+            onEndEditing={handleEndEditing}
+            onFocus={() => setHelpTextVisible("mobile")}
           />
+          {helpText.mobile && (
+            <Text style={styles.helpText}>
+              Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.
+            </Text>
+          )}
 
-          <Text style={styles.label}>*Name / Business Name :</Text>
+          {/* Person */}
+          <Text style={styles.label}>*Person :</Text>
+          <TextInput
+            placeholder="Person"
+            style={styles.input}
+            value={myperson}
+            onChangeText={handlePersonName}
+            onFocus={() => setHelpTextVisible("person")}
+          />
+          {helpText.person && (
+            <Text style={styles.helpText}>Enter the person's full name.</Text>
+          )}
+
+          {/* Prefix */}
+          <View style={styles.prefixcontainer}>
+            <Text style={styles.label}>*Prefix:</Text>
+            <RadioButton.Group
+              onValueChange={(value) => setPrefix(value)}
+              value={myprefix}
+            >
+              <View style={styles.radioContainer}>
+                <View style={styles.radioOption}>
+                  <RadioButton value="Mr." />
+                  <Text>Mr.</Text>
+                </View>
+                <View style={styles.radioOption}>
+                  <RadioButton value="Ms." />
+                  <Text>Ms.</Text>
+                </View>
+              </View>
+            </RadioButton.Group>
+          </View>
+
+          {/* Business Name */}
+          <Text style={styles.label}>*Firm / Business Name :</Text>
           <TextInput
             placeholder="Name/Business Name"
             style={styles.input}
             value={mybusinessname}
-            onChangeText={(text) => setBusinessname(text)}
+            onChangeText={handleBusinessName}
+            onFocus={() => setHelpTextVisible("businessName")}
           />
 
+          {/* Address */}
           <Text style={styles.label}>*Address :</Text>
           <TextInput
             placeholder="Address"
             style={[styles.input, { height: 80 }]}
             multiline
-            value={mydoorno}
-            onChangeText={(text) => setDoorno(text)}
+            value={myaddress}
+            onChangeText={(text) => setAddress(text)}
+            onFocus={() => setHelpTextVisible("address")}
           />
 
+          {/* City */}
           <Text style={styles.label}>*City :</Text>
           <TextInput
             placeholder="City"
             style={styles.input}
             value={mycity}
-            onChangeText={(text) => setCity(text)}
+            onChangeText={handleCityName}
+            onFocus={() => setHelpTextVisible("cityName")}
           />
 
+          {/* Pincode */}
           <Text style={styles.label}>*Pincode :</Text>
           <TextInput
             placeholder="Pincode"
@@ -178,16 +433,42 @@ const MediaPartner = () => {
             style={styles.input}
             value={mypincode}
             onChangeText={(text) => setPincode(text)}
+            onFocus={() => setHelpTextVisible("pincode")}
           />
 
+          {/* Product / Service */}
           <Text style={styles.label}>*Product / Service :</Text>
           <TextInput
             placeholder="Product"
             style={styles.input}
             value={myproduct}
             onChangeText={(text) => setProduct(text)}
+            onFocus={() => setHelpTextVisible("product")}
           />
 
+          {/* Landline */}
+          <Text style={styles.label}>Landline Number :</Text>
+          <TextInput
+            placeholder="Landline Number"
+            keyboardType="number-pad"
+            style={styles.input}
+            value={mylandLine}
+            onChangeText={(text) => setLandLine(text)}
+            onFocus={() => setHelpTextVisible("landline")}
+          />
+
+          {/* STD Code */}
+          <Text style={styles.label}>STD Code :</Text>
+          <TextInput
+            placeholder="STD Code"
+            keyboardType="number-pad"
+            style={styles.input}
+            value={myLcode}
+            onChangeText={(text) => setLcode(text)}
+            onFocus={() => setHelpTextVisible("std")}
+          />
+
+          {/* Email */}
           <Text style={styles.label}>Email :</Text>
           <TextInput
             style={styles.input}
@@ -196,18 +477,12 @@ const MediaPartner = () => {
             value={myemail}
             onChangeText={(text) => setEmail(text)}
             autoCapitalize="none"
+            onFocus={() => setHelpTextVisible("email")}
           />
 
+          {/* Submit Button */}
           <TouchableOpacity style={styles.button} onPress={insertRecord}>
             <Text style={styles.buttonText}>Submit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={pickImage}>
-            <Text style={styles.buttonText}>Pick Image</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={takePhoto}>
-            <Text style={styles.buttonText}>Take Photo</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -220,6 +495,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
   },
+  inputAndroid: {
+    borderWidth: 3,
+    borderColor: "#000000",
+  },
   headerText: {
     textAlign: "center",
     fontSize: 50,
@@ -231,6 +510,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderTopLeftRadius: 300,
     padding: 20,
+  },
+  prefixcontainer: {
+    padding: 16,
+  },
+  radioOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  radioContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   label: {
     fontSize: 18,
@@ -260,4 +551,3 @@ const styles = StyleSheet.create({
 });
 
 export default MediaPartner;
- 

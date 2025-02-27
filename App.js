@@ -70,6 +70,7 @@ import Signup from "./Components/Signup";
 import Home from "./Components/Home";
 import MediaPartner from "./Components/MediaPartner";
 import SendSMS from "./Components/SendSms";
+import ProductSms from "./Components/ProductSms";
 import AdminPage from "./Components/Admin/AdminPage";
 import { AuthProvider } from "./Components/AuthContext";
 
@@ -77,6 +78,7 @@ const Drawer = createDrawerNavigator();
 
 export default function App() {
   return (
+   
     <AuthProvider>
       <NavigationContainer>
         <Drawer.Navigator
@@ -113,6 +115,11 @@ export default function App() {
             options={{ headerShown: true }}
           />
           <Drawer.Screen
+            name="CategorywisePromotion"
+            component={ProductSms}
+            options={{ headerShown: true }}
+          />
+          <Drawer.Screen
             name="AdminPage" // Add AdminPage screen to the drawer
             component={AdminPage}
             options={{ headerShown: true }}
@@ -120,6 +127,7 @@ export default function App() {
         </Drawer.Navigator>
       </NavigationContainer>
     </AuthProvider>
+   
   );
 }
 

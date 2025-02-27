@@ -1,288 +1,391 @@
-// ============================================= with dropdown and Picode search with icon =====================
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-  Linking,
   TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Linking,
+  FlatList,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import axios from "axios";
-import RNPickerSelect from "react-native-picker-select";
-import { Ionicons } from "@expo/vector-icons";
-import { RadioButton } from "react-native-paper";
+import { AuthContext } from "./AuthContext";
 
 const SendSms = () => {
+  const { user, userData } = useContext(AuthContext);
+  // const [userData, setUserData] = useState("");
   const [pincodeInput, setPincodeInput] = useState("");
-  const [businesses, setBusinesses] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [clrBtn, setClrBtn] = useState(false);
+  const [datas, setData] = useState([]);
+  const [showresults, setShowresults] = useState(false);
+  const [noRecord, setNoRecord] = useState(false);
   const [selectedBusinesses, setSelectedBusinesses] = useState([]);
-  const [selectedTemplate, setSelectedTemplate] = useState("template1");
-  const [customMessage, setCustomMessage] = useState("");
-  const [prefixes, setPrefixes] = useState([]);
   const [selectedPrefix, setSelectedPrefix] = useState(null);
+  const maxLength = 290;
+  const batchSize = 10;
+  const selectedNumbers = selectedBusinesses.slice(0, batchSize).map((client) => client.mobileno);
+  const [customMessage, setCustomMessage] = useState(
+    "I Saw Your Listing in SIGNPOST PHONE BOOK. I am Interested in your Products. Please Send Details/Call Me. (Sent Thro Signpost PHONE BOOK)"
+  );
+
+  const [prefix, setPrefix] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const templates = {
-    template1: `Signpost Celfon Team wishes your family a HAPPY & JOYOUS DEEPAVALI!
-    On this occasion, we launch our SIGNPOST PHONE BOOK Mobile App to help micro businesses promote their business in their neighborhood. Tap the link to access:
-    WWW.signpostphonebook.in`,
+  const handleSelectAllChange = () => {
+    if (selectAll) {
+      setSelectedBusinesses([]);
+    } else {
+      setSelectedBusinesses([...datas]); // Use the reference directly
+    }
+    setSelectAll(!selectAll);
+  };
+  
+  
 
-    template2: `Dear customer, celebrate Deepavali with joy! Explore new business opportunities with the SIGNPOST PHONE BOOK App. Start promoting your services now! Visit:
-    WWW.signpostphonebook.in`,
+  const fetchData = async () => {
+    try {
+      const response = await fetch(
+        "https://signpostphonebook.in/client_fetch_for_new_database.php"
+      );
+      if (!response.ok)
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      const jsonResponse = await response.json();
+      if (Array.isArray(jsonResponse)) {
+        setData(jsonResponse.sort((a, b) => b.id - a.id));
+      } else {
+        Alert.alert("Unexpected response from server.");
+      }
+    } catch (error) {
+      Alert.alert("Failed to load data: " + error.message);
+    }
   };
 
-  // Fetch prefixes on component mount
   useEffect(() => {
-    axios
-      .get("https://signpostphonebook.in/client_get_prefix.php")
-      .then((response) => setPrefixes(response.data))
-      .catch((error) => console.error("Error fetching prefixes:", error));
-  }, []);
+    if (!pincodeInput && !prefix) {
+      fetchData(); // Fetch all data only if no filters are applied
+    }
+  }, [pincodeInput, prefix]);
+  
 
   const fetchBusinesses = () => {
-    if (!pincodeInput || !selectedPrefix) {
+    if (!pincodeInput || !prefix) {
       Alert.alert("Please enter a valid pincode and select a prefix.");
       return;
     }
-
+  
     setLoading(true);
     axios
       .get(
-        `https://signpostphonebook.in/sms_client_details.php?pincode=${pincodeInput}&prefix=${selectedPrefix}`
+        `https://signpostphonebook.in/get_details_based_on_prefix_pincode.php?pincode=${pincodeInput}&prefix=${prefix}`
       )
-      .then((response) => setBusinesses(response.data))
+      .then((response) => {
+        if (response.data?.[0] === "No records found.") {
+          setNoRecord(true);
+          setClrBtn(true);
+          setData([]);
+          setShowresults(false);
+        } else {
+          setData(response.data); // Keep only filtered data
+          setClrBtn(true);
+          setShowresults(true);
+        }
+      })
       .catch((error) => console.error("Error fetching businesses:", error))
       .finally(() => setLoading(false));
   };
+  
 
-  const toggleSelectBusiness = (business) => {
-    const isSelected = selectedBusinesses.some(
-      (b) => b.mobileno === business.mobileno
-    );
-    if (isSelected) {
-      setSelectedBusinesses((prev) =>
-        prev.filter((b) => b.mobileno !== business.mobileno)
-      );
-    } else {
-      setSelectedBusinesses((prev) => [...prev, business]);
-    }
+  const handleCheckboxChange = useCallback((item) => {
+    setSelectedBusinesses((prevSelected) => {
+      const isSelected = prevSelected.some((i) => i.id === item.id);
+      return isSelected
+        ? prevSelected.filter((i) => i.id !== item.id) // Remove if selected
+        : [...prevSelected, item]; // Add if not selected
+    });
+  }, []);
+  
+
+  const clearItems = () => {
+    setPincodeInput("");
+    setPrefix("");
+    setSelectedPrefix(null);
+    setData([]); // Clear data instead of reloading all records
+    setSelectAll(false);
+    setSelectedBusinesses([]);
+    setClrBtn(false);
+    setShowresults(false);
+    setNoRecord(false);
   };
+  
+  
 
   const sendBatchSMS = () => {
     if (selectedBusinesses.length === 0) {
-      Alert.alert("Please select at least one business!");
+      Alert.alert("No clients selected!");
       return;
     }
 
-    let index = 0;
+    const currentDate = new Date().toISOString().split("T")[0];
 
-    const sendNextSMS = () => {
-      if (index >= selectedBusinesses.length) {
-        Alert.alert("All messages have been sent!");
-        return;
-      }
-
-      const { prefix, businessname, mobileno } = selectedBusinesses[index];
-      const personalizedMessage = customMessage.replace(
-        "{name}",
-        `${prefix} ${businessname}`
-      );
-      const smsUrl = `sms:${mobileno}?body=${encodeURIComponent(
-        personalizedMessage
-      )}`;
-
-      Linking.openURL(smsUrl).catch(() =>
-        Alert.alert("Error", `Could not open SMS application for ${mobileno}.`)
-      );
-
-      index++;
-      setTimeout(sendNextSMS, 5000);
+    const postData = {
+      user_name: userData.bussinessname || userData.person || "Unknown",
+      date: currentDate,
+      pincode: pincodeInput.trim(),
+      product: "",
+      promotion_from: "Nearby Promotion",
+      selected_count: selectedBusinesses.length,
     };
 
-    sendNextSMS();
+    axios
+      .post(
+        "https://signpostphonebook.in/promotion_app/promotion_appliaction.php",
+        postData
+      )
+      .then((response) => {
+        console.log(response.data.Message);
+      })
+      .catch((error) => console.error("Error sending data:", error));
+
+    const selectedNumbers = selectedBusinesses.map((client) => client.mobileno);
+    const recipients = selectedNumbers.join(",");
+    const smsUri = `sms:${recipients}?body=${encodeURIComponent(
+      customMessage
+    )}`;
+
+    // Open SMS app
+    Linking.openURL(smsUri).then(() => {
+      // Clear all after sending
+      setPincodeInput("");
+      setPrefix("");
+      setSelectedPrefix(null);
+      setSelectedBusinesses([]);
+      setSelectAll(false);
+      setCustomMessage(
+        "I Saw Your Listing in SIGNPOST PHONE BOOK. I am Interested in your Products. Please Send Details/Call Me. (Sent Thro Signpost PHONE BOOK)"
+      );
+      setClrBtn(false);
+      setShowresults(false);
+      setNoRecord(false);
+    });
   };
 
   return (
-    <View style={styles.container}>
-      <View>
-        <Text>Select Prefix</Text>
-        <View style={styles.prefixContainer}>
-          {prefixes.map((prefix) => (
-            <TouchableOpacity
-              key={prefix.name}
-              onPress={() => setSelectedPrefix(prefix.name)}
-              style={styles.prefixItem}
-            >
-              <RadioButton
-                value={prefix.name}
-                status={
-                  selectedPrefix === prefix.name ? "checked" : "unchecked"
-                }
-                onPress={() => setSelectedPrefix(prefix.name)}
-              />
-              <Text style={styles.prefixLabel}>{prefix.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-      {/* <Text>Select Prefix</Text>
-      <View style={styles.prefixContainer}>
-        {prefixes.map((prefix, index) => (
-          <TouchableOpacity
-            key={prefix.name}
-            onPress={() => setSelectedPrefix(prefix.name)}
-          >
-            <Ionicons
-              name="person-circle"
-              size={40}
-              color={selectedPrefix === prefix.name ? "#008000" : "#007bff"}
-              style={styles.icon}
-            />
-            <Text style={styles.prefixLabel}>{prefix.name}</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>NEARBY PROMOTION</Text>
+      <Text style={styles.instructions}>
+        Send Text messages to Mobile Users in desired Pincode Area.{"\n"}
+        1. Edit/Create message. Max: 290 characters.{"\n"}
+        2. Select type of Recipient (Males/Females/Business).{"\n"}
+        3. Type Pincode.{"\n"}
+        4. Send in batches of 10.
+      </Text>
+
+      <Text style={styles.label}>Edit / Create Message:</Text>
+      <TextInput
+        style={styles.textInput}
+        multiline
+        value={customMessage}
+        onChangeText={setCustomMessage}
+        maxLength={maxLength}
+      />
+      <Text>
+        {maxLength - customMessage.length} / {maxLength}
+      </Text>
+
+      <Text style={styles.label}>Select Recipients Type:</Text>
+      <View style={styles.recipientContainer}>
+        {["Mr.", "Ms.", "M/s."].map((item) => (
+          <TouchableOpacity key={item} onPress={() => setPrefix(item)}>
+            <Text style={styles.radioText}>
+              {prefix === item ? "🔘" : "⚪"} {item}
+            </Text>
           </TouchableOpacity>
         ))}
-      </View> */}
-
-      <View style={styles.pincodeInputContainer}>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter Pincode"
-          maxLength={6}
-          value={pincodeInput}
-          onChangeText={setPincodeInput}
-          keyboardType="numeric"
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={fetchBusinesses}>
-          <Ionicons name="search" size={24} color="white" />
-        </TouchableOpacity>
       </View>
 
-      <RNPickerSelect
-        onValueChange={(value) => {
-          setSelectedTemplate(value);
-          setCustomMessage(templates[value]);
-        }}
-        items={[
-          { label: "Template 1", value: "template1" },
-          { label: "Template 2", value: "template2" },
-        ]}
-        placeholder={{ label: "Select Template", value: null }}
-      />
-
-      <TextInput
-        style={styles.textArea}
-        value={customMessage}
-        onChangeText={(text) => setCustomMessage(text)}
-        multiline
-      />
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#007bff" />
-      ) : (
-        <FlatList
-          data={businesses}
-          keyExtractor={(item) => item.mobileno}
-          renderItem={({ item }) => {
-            const isSelected = selectedBusinesses.some(
-              (b) => b.mobileno === item.mobileno
-            );
-
-            return (
-              <View style={styles.card}>
-                <View style={styles.cardContent}>
-                  <Text>
-                    {item.prefix} {item.businessname}
-                  </Text>
-                  <Text>{item.mobileno}</Text>
-                </View>
-                <TouchableOpacity onPress={() => toggleSelectBusiness(item)}>
-                  <Ionicons
-                    name={isSelected ? "checkmark-circle" : "add-circle"}
-                    size={30}
-                    color={isSelected ? "#3b8132" : "#6a0dad"}
-                  />
-                </TouchableOpacity>
-              </View>
-            );
-          }}
-        />
-      )}
-
-      {selectedBusinesses.length > 0 && (
-        <Text style={styles.selectedMessage}>
-          Selected Businesses: {selectedBusinesses.length}
+      <Text style={styles.label}>Select All Recipients:</Text>
+      <TouchableOpacity onPress={handleSelectAllChange}>
+        <Text style={styles.radioText}>
+          {selectAll ? "🔘" : "⚪"} Select All
         </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={sendBatchSMS} style={styles.sendButton}>
+        <Text style={styles.buttonText}>Send SMS</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.label}>Enter Pincode:</Text>
+      <TextInput
+        style={styles.pincodeInput}
+        keyboardType="numeric"
+        maxLength={6}
+        value={pincodeInput}
+        onChangeText={setPincodeInput}
+      />
+
+      <TouchableOpacity
+        onPress={clrBtn ? clearItems : fetchBusinesses}
+        style={styles.searchButton}
+      >
+        <Text style={styles.buttonText}>{clrBtn ? "Clear" : "Search"}</Text>
+      </TouchableOpacity>
+
+      {showresults && (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultText}>
+            <Text style={styles.boldText}>Results Displayed:</Text>{" "}
+            {datas.length}
+          </Text>
+          <Text style={styles.resultText}>
+            <Text style={styles.boldText}>Selected:</Text>{" "}
+            {selectedBusinesses.length}
+          </Text>
+        </View>
       )}
 
-      <TouchableOpacity style={styles.button} onPress={sendBatchSMS}>
-        <Text style={styles.buttonText}>Send SMS to Selected</Text>
+      {loading && <ActivityIndicator size="large" color="blue" />}
+
+      {showresults && datas?.length > 0 && (
+        <ScrollView style={styles.resultList} nestedScrollEnabled={true}>
+          {datas.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => handleCheckboxChange(item)}
+              style={[
+                styles.resultItem,
+                selectedBusinesses.includes(item) && styles.selectedItem,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.resultItemText,
+                  selectedBusinesses.includes(item) && styles.selectedItemText,
+                ]}
+              >
+                {selectedBusinesses.includes(item) ? "✔" : "○"}{" "}
+                {item.businessname || item.person} -{" "}
+                {item.mobileno.slice(0, -5)}xxxxx
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      <TouchableOpacity onPress={sendBatchSMS} style={styles.sendButton}>
+        <Text style={styles.buttonText}>Send SMS</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, },
-  prefixContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 15,
+  container: {
+    padding: 20,
+    height: "100%",
   },
-  icon: { marginBottom: 5 },
-  prefixLabel: { textAlign: "center", fontSize: 12, color: "#333" },
-  pincodeInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  header: {
+    fontSize: 30,
+    fontWeight: "bold",
     marginBottom: 10,
-  },
-  textInput: {
-    flex: 1,
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-  },
-  searchButton: {
-    backgroundColor: "#6a0dad",
-    padding: 15,
-    marginLeft: 10,
-    borderRadius: 8,
-  },
-  textArea: {
-    height: 100,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginTop: 10,
-    padding: 10,
-  },
-  card: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-  },
-  cardContent: { flex: 1 },
-  button: {
-    backgroundColor: "#6a0dad",
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  selectedMessage: {
-    marginTop: 10,
-    fontSize: 16,
+    color: "#6a0dad",
     textAlign: "center",
   },
+  instructions: {
+    marginTop: 10,
+    lineHeight: 30,
+    fontSize: 16,
+    textAlign: "justify",
+  },
+  label: {
+    fontWeight: "bold",
+    marginTop: 10,
+    fontSize: 16,
+  },
+  textInput: {
+    borderWidth: 1,
+    padding: 15,
+    borderRadius: 5,
+    marginBottom: 10,
+    fontSize: 16,
+    lineHeight: 25,
+  },
+  recipientContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 15,
+    marginTop: 10,
+  },
+  radioText:{
+    fontSize: 16
+  },
+  sendButton: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  searchButton:
+  { backgroundColor: "blue",
+    padding: 10,
+    borderRadius: 5
+  },
+  buttonText:
+  { color: "white",
+    textAlign: "center"
+  },
+  pincodeInput: {
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  resultContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  resultText:
+  { fontSize: 16,
+    color: "#333"
+  },
+  boldText:{
+    fontWeight: "bold"
+  },
+  resultList:{
+    maxHeight: 300
+  },
+  resultItem: {
+    backgroundColor: "#fff",
+    padding: 12,
+    marginVertical: 6,
+    marginHorizontal: 10,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  selectedItem:{
+    backgroundColor: "#4CAF50"
+  },
+  resultItemText:
+  { fontSize: 16,
+    fontWeight: "bold",
+    color: "#333"
+  },
+  selectedItemText:{
+    color: "#fff"
+  },
+
 });
 
 export default SendSms;
