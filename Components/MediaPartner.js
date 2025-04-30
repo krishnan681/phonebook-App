@@ -208,7 +208,6 @@ const MediaPartner = ({ navigation }) => {
       lcode: myLcode,
       discount: mydiscount,
       description: mydescription,
-       
     };
   
     try {
@@ -227,9 +226,13 @@ const MediaPartner = ({ navigation }) => {
       const jsonResponse = await response.json();
   
       if (jsonResponse.Message) {
-        setShowPopup(true);
-        await insertCount(userData?.id); // Pass user ID properly
-        await insertbusinessName();
+        // Show success alert and reset form
+        Alert.alert("Success", "Your record has been added successfully!", [
+          { text: "OK", onPress: resetForm }, // Reset form after pressing OK
+        ]);
+  
+        await insertCount(userData?.id); // Update count for user ID
+        await insertbusinessName(); // Any additional logic you need
       } else {
         alert("Unexpected response from server.");
       }
@@ -238,6 +241,7 @@ const MediaPartner = ({ navigation }) => {
       console.log(error);
     }
   };
+  
   
   const insertCount = async (userid) => {
     if (!userid) {

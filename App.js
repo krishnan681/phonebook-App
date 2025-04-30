@@ -73,6 +73,9 @@ import SendSMS from "./Components/SendSms";
 import ProductSms from "./Components/ProductSms";
 import AdminPage from "./Components/Admin/AdminPage";
 import { AuthProvider } from "./Components/AuthContext";
+import Profile from "./Components/Profile";
+import Settings from "./Components/Settings";
+import Pricing from "./Components/Pricing";
 
 const Drawer = createDrawerNavigator();
 
@@ -117,6 +120,21 @@ export default function App() {
           <Drawer.Screen
             name="CategorywisePromotion"
             component={ProductSms}
+            options={{ headerShown: true }}
+          />
+          <Drawer.Screen
+            name="Profile"
+            component={Profile}
+            options={{ headerShown: true }}
+          />
+          <Drawer.Screen
+            name="Pricing"
+            component={Pricing}
+            options={{ headerShown: true }}
+          />
+          <Drawer.Screen
+            name="Settings"
+            component={Settings}
             options={{ headerShown: true }}
           />
           <Drawer.Screen

@@ -4,11 +4,11 @@ import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import Icon from "react-native-vector-icons/Ionicons";
 import { AuthContext } from "./AuthContext";
 
-export default function CustomDrawerContent(props,{navigation}) {
+export default function CustomDrawerContent(props, { navigation }) {
   const { user, userData, logout } = useContext(AuthContext);
 
   // List of allowed mobile numbers for the Admin page
-  const allowedAdminNumbers = ["6383965890", "9843657564","8344508070"]; // Add your admin mobile numbers here
+  const allowedAdminNumbers = ["6383965890", "9843657564", "8344508070"]; // Add your admin mobile numbers here
 
   // Normalize and check if the logged-in user is an admin
   // const isAdmin = allowedAdminNumbers.includes(userData.mobileno?.trim());
@@ -49,11 +49,37 @@ export default function CustomDrawerContent(props,{navigation}) {
       props.navigation.navigate("CategorywisePromotion");
     }
   };
+  const handleProfile = () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else {
+      props.navigation.navigate("Profile");
+    }
+  };
+  const handleSettings = () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else {
+      props.navigation.navigate("Settings");
+    }
+  };
+  const handlePricing= () => {
+    if (user === "") {
+      Alert.alert("Login Required");
+      props.navigation.navigate("Login");
+    } else {
+      props.navigation.navigate("Pricing");
+    }
+  };
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
       <View style={styles.header}>
-        <Text style={styles.brand}>Welcome {userData.businessname|| userData.person}</Text>
+        <Text style={styles.brand}>
+          Welcome {userData.businessname || userData.person}
+        </Text>
       </View>
 
       <View style={styles.menu}>
@@ -88,7 +114,7 @@ export default function CustomDrawerContent(props,{navigation}) {
         <DrawerItem
           label="Profile"
           icon={() => <Icon name="person-outline" size={20} color="#f5365c" />}
-          onPress={() => alert("Update Will Come Soon!")}
+          onPress={handleProfile}
           labelStyle={styles.label}
         />
         {/* Conditionally render the Admin menu item */}
@@ -100,12 +126,25 @@ export default function CustomDrawerContent(props,{navigation}) {
             labelStyle={styles.label}
           />
         )} */}
-        <DrawerItem
+        {/* <DrawerItem
           label="Account"
           icon={() => (
             <Icon name="settings-outline" size={20} color="#11cdef" />
           )}
           onPress={() => alert("Update Will Come Soon!")}
+          labelStyle={styles.label}
+        /> */}
+
+        <DrawerItem
+          label="Pricing"
+          icon={() => <Icon name="cash-outline" size={20} color="#11cdef" />}
+          onPress={handlePricing}
+          labelStyle={styles.label}
+        />
+        <DrawerItem
+          label="Settings"
+          icon={() => <Icon name="settings-outline" size={20} color="#11cdef" />}
+          onPress={handleSettings}
           labelStyle={styles.label}
         />
       </View>

@@ -22,7 +22,7 @@ export default function TotalCount() {
   const fetchTeamData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("https://signpostphonebook.in/try_totalcount.php");
+      const response = await fetch("https://signpostphonebook.in/try_totalcount_for_new_database.php");
       const data = await response.json();
       setTeamData(data);
     } catch (error) {
@@ -35,7 +35,7 @@ export default function TotalCount() {
   // Fetch agenda data for a specific member
   const fetchAgendaData = async (memberId) => {
     try {
-      const response = await fetch(`https://signpostphonebook.in/fetch_events.php?id=${memberId}`);
+      const response = await fetch(`https://signpostphonebook.in/fetch_events_for_new_database.php?id=${memberId}`);
       if (!response.ok) throw new Error("Failed to fetch calendar data.");
       const data = await response.json();
 

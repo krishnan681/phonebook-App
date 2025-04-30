@@ -229,7 +229,7 @@ export default function ProductSms() {
           </View>
 
           <FlatList
-            style={{ marginTop: 10, backgroundColor: "red", height: "800%" }}
+            style={{ marginTop: 10}}
             data={data}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
@@ -326,11 +326,15 @@ const styles = StyleSheet.create({
     },
     card: {
         padding: 20, // Increased padding for more space inside
-        borderWidth: 3, // Thicker border
+        shadowColor: "#000", // Add a shadow to make it stand out
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
         marginVertical: 10, // More spacing between items
         borderRadius: 10, // Rounded corners
-        
-        borderColor: "red", // Keeps the red border
+        backgroundColor: "white", // Light yellow background
         minHeight: 100, // Set a minimum height to make it larger
         justifyContent: "center", // Align content to center
     },
@@ -338,3 +342,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold"
     },
   });
+
+
+
